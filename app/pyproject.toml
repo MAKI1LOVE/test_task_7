@@ -1,0 +1,148 @@
+[tool.poetry]
+name = "app"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.12"
+uvicorn = "^0.34.3"
+openai = "^1.84.0"
+pytest = {extras = ["asyncio"], version = "^8.4.0"}
+dishka = "^1.6.0"
+sqlalchemy = "^2.0.41"
+asyncpg = "^0.30.0"
+aiohttp = "^3.12.9"
+beautifulsoup4 = "^4.13.4"
+pydantic-settings = "^2.9.1"
+alembic = "^1.16.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+show-fixes = true
+preview = false
+exclude = [".git", ".idea", ".mypy_cache", ".tox", ".venv", ".pycache"]
+extend-exclude = ["migrations"]
+target-version = "py312"
+
+[tool.ruff.analyze]
+detect-string-imports = true
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.ruff.lint]
+select = [
+    "F",     # pyflakes
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "C90",   # mccabe
+    "I",     # isort
+    "N",     # pep8-naming
+    "UP",    # pyupgrade
+    "YTT",   # flake8-2020
+    "ANN",   # flake8-annotations
+    "ASYNC", # flake8-async
+    "S",     # flake8-bandit
+    "BLE",   # flake8-blind-except
+    "FBT",   # flake8-boolean-trap
+    "B",     # flake8-bugbear
+    "A",     # flake8-builtins
+    "COM",   # flake8-commas
+    "C4",    # flake8-comprehensions
+    "DTZ",   # flake8-datetimez
+    "T10",   # flake8-debugger
+    "EM",    # flake8-errmsg
+    "EXE",   # flake8-executable
+    "FA",    # flake8-future-annotations
+    "ISC",   # flake8-implicit-str-concat
+    "ICN",   # flake8-import-conventions
+    "LOG",   # flake8-logging
+    "LOG",   # flake8-logging
+    "G",     # flake8-logging-format
+    "INP",   # flake8-no-pep420
+    "PIE",   # flake8-pie
+    "T20",   # flake8-print
+    "PYI",   # flake8-pyi
+    "PT",    # flake8-pytest-style
+    "Q",     # flake8-quotes
+    "RSE",   # flake8-raise
+    "RET",   # flake8-return
+    "SLF",   # flake8-self
+    "SLOT",  # flake8-slots
+    "SIM",   # flake8-simplify
+    "TID",   # flake8-tidy-imports
+    "TC",    # flake8-type-checking
+    "INT",   # flake8-gettext
+    "ARG",   # flake8-unused-arguments
+    "PTH",   # flake8-use-pathlib
+    "TD",    # flake8-todos
+    "FIX",   # flake8-fixme
+    "ERA",   # flake8-eradicate
+    "PGH",   # pygrep-hooks
+    "PL",    # Import alias does not rename original package
+    "TRY",   # tryceratops
+    "FLY",   # flynt
+    "FAST",  # FastAPI
+    "PERF",  # Perflint
+    "FURB",  # refurb
+    "RUF",   # ruff-specific rules
+    # "DOC",  # pydoclint
+    # "CPY",  # flake8-copyright
+    # "DJ",   # flake8-django
+    # "PD",   # pandas-vet
+    # "NPY",  # NumPy-specific rules
+    # "AIR",  # Airflow
+]
+ignore = [
+    "TD002", # missing-todo-author
+    "TD003", # missing-todo-link
+    #     "A002",   # builtin shadowing in arguments
+    #     "A003",   # builtin shadowing in attributes
+    #     "D203",   # 1 blank line required before class docstring
+    #     "ARG002", # Unused method argument
+    #     "TRY003", # Avoid specifying long messages outside the exception class
+    #     "TRY300", # Consider moving statement into the else clause
+    #     "ARG001", # Unused first argument
+    #     "PT019",  # Fixture without value is injected as parameter, use @pytest.mark.usefixtures instead
+    #     "SIM108",  # Use ternary operator instead of if-else block (ternaries lie to coverage)
+]
+fixable = ["ALL"]
+unfixable = [
+    "ERA001",   # eradicate: found commented out code (can be dangerous if fixed automatically)
+]
+
+[tool.ruff.flake8-quotes]
+inline-quotes = "single"
+multiline-quotes = "single"
+
+[tool.pytest.ini_options]
+addopts = "-vvs --tb=short"
+xfail_strict = true
+testpaths = ["tests", "integration"]
+python_files = ["tests/*.py", "test_*.py"]
+# filterwarnings = [
+#     "ignore::DeprecationWarning",
+#     "ignore:Module already imported:pytest.PytestWarning"
+# ]
+log_cli = true
+log_level = 'INFO'
+asyncio_mode = "auto"
+# asyncio_default_fixture_loop_scope = "function"
+
+# [tool.ruff.per-file-ignores]
+# "tests/*" = [
+#     "S",        # ignore bandit security issues in tests
+#     "B018",     # ignore useless expressions in tests
+#     "PT012",    # ignore complex with pytest.raises clauses
+# ]
