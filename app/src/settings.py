@@ -22,5 +22,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_nested_delimiter='__',
         extra='ignore',
+        env_file='.env',
     )
     POSTGRES_SETTINGS: PostgresSettings
+    NESTING: int

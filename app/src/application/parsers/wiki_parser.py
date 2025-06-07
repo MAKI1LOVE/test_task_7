@@ -1,76 +1,104 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, replace
+from typing import Any
+from urllib.parse import urljoin
 
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup
 
-from src.application.errors import NewSiteStructureError
 from src.domain.article import Article
 from src.domain.base_url_parser import BaseUrlParser
+
+
+@dataclass
+class ParserSettings:
+    NESTING: int
 
 
 # we also could add some kind of set to store previously parsed links not do it again
 class WikiParser(BaseUrlParser):
     MAIN_BLOCK_ID = 'mw-content-text'
-    DOMAIN = 'wikipedia.org'
+    MAIN_DOMAIN = 'wikipedia.org'
 
-    def __init__(self, aiohttp_session: ClientSession, thread_pool: ThreadPoolExecutor, nesting: int = 5) -> None:
+    def __init__(
+        self,
+        aiohttp_session: ClientSession,
+        thread_pool: ThreadPoolExecutor,
+        parser_settings: ParserSettings,
+    ) -> None:
         self.session = aiohttp_session
         self.thread_pool = thread_pool
-        self.nesting = nesting
+        self.parser_settings = parser_settings
 
-    async def parse_url(self, url: str) -> Article:
+    async def parse(self, url: str) -> Article | None:
+        self.url = url
+        self.parsed_articles: dict[str, Article] = {}
+
+        return await self.parse_url(self.url, self.parser_settings.NESTING)
+
+    async def parse_url(self, url: str, nesting: int) -> Article | None:
         async with self.session.get(url) as response:
-            print(response.status)
+            if response.status != 200 or 'text/html' not in response.content_type:
+                return None
             text = await response.text()
 
-        parsed_text, parsed_urls = asyncio.get_running_loop().run_in_executor(
+        parsed_text, parsed_urls = await asyncio.get_running_loop().run_in_executor(
             self.thread_pool,
             self.parse_html,
-            url,
             text,
         )
-        article = Article(parsed_text)
+        if parsed_text is None:
+            return None
 
-        parsed_articles = await self.parse_siblings(parsed_urls)
-        article.siblings = parsed_articles
+        if url not in self.parsed_articles:
+            article = Article(url=url, parsed_text=parsed_text)
+            self.parsed_articles[url] = article
+        else:
+            article = self.parsed_articles[url]
+
+        if nesting > 0:
+             article.siblings = await self.parse_siblings(article.url, parsed_urls, nesting - 1)
 
         return article
 
-    def parse_html(self, url: str, text: str) -> tuple[str, list[str]]:
-        soup = BeautifulSoup(text)
+    def parse_html(self, text: str) -> tuple[str | None, list[str]]:
+        soup = BeautifulSoup(text, 'lxml')
         main_block = soup.find(id=self.MAIN_BLOCK_ID)
         if main_block is None:
-            msg = 'main block not found in wiki page'
-            raise NewSiteStructureError(msg)
+            return None, []
 
         parsed_text = main_block.get_text()
 
         urls = main_block.find_all('a')
-        cleaned_urls = self.find_siblings(url, urls)
+        cleaned_urls = self.find_siblings(urls)
 
         return parsed_text, cleaned_urls
 
-    def find_siblings(self, main_url: str, urls: list[str]) -> list[str]:
-        sibling_urls: list[str] = []
-        for url in urls:
+    def find_siblings(self, urls: list[Any]) -> list[str]:
+        sibling_urls: set[str] = set()
+        for url_block in urls:
             # check if it is same page
-            if url.startswith(main_url):
+            url = url_block.get('href')
+            # some anchors may not contain href
+            if url is None:
+                continue
+
+            if url.startswith((self.url, '#')):
                 continue
 
             # check if it is not wiki page
             domain_end_index: int = url.find('/', 8)
-            if url[:domain_end_index].endswith(self.DOMAIN):
-                sibling_urls.append(url)
+            if url.startswith('/') or url[:domain_end_index].endswith(self.MAIN_DOMAIN):
+                sibling_urls.add(url)
 
-        return sibling_urls
+        return list(sibling_urls)
 
-    async def parse_siblings(self, parsed_urls: list[str]) -> list[Article]:
-        return (
-            [
-                await WikiParser(self.session, self.thread_pool, self.nesting - 1).parse_url(parsed_url)
-                for parsed_url in parsed_urls
-            ]
-            if self.nesting > 0
-            else []
-        )
+    async def parse_siblings(self, main_url: str, parsed_urls: list[str], nesting: int) -> list[Article]:
+        tasks = [
+            self.parse_url(urljoin(main_url, parsed_url), nesting)
+            for parsed_url in parsed_urls
+        ]
+        articles = await asyncio.gather(*tasks)
+
+        return [article for article in articles if article is not None]

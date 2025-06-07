@@ -1,2 +1,0 @@
-class NewSiteStructureError(BaseException):
-    pass

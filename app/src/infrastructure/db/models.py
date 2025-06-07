@@ -1,7 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Index, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.infrastructure.db.base import Base, IntId
+from src.infrastructure.db.base import Base, UUIDId
 
 article_to_article = Table(
     'article_to_articles',
@@ -11,7 +11,7 @@ article_to_article = Table(
 )
 
 
-class Article(Base, IntId):
+class Article(Base, UUIDId):
     __tablename__ = 'article'
 
     url: Mapped[str] = mapped_column(String, nullable=False, unique=True)
@@ -20,8 +20,8 @@ class Article(Base, IntId):
     siblings: Mapped[list['Article']] = relationship(
         'Article',
         secondary=article_to_article,
-        primaryjoin=article_to_article.c.parent_id,
-        secondaryjoin=article_to_article.c.sibling_id,
+        primaryjoin='article_to_articles.c.parent_id==Article.id',
+        secondaryjoin='article_to_articles.c.sibling_id==Article.id',
         backref='related_to',
     )
 

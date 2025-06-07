@@ -1,18 +1,25 @@
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from typing import Protocol
+from uuid import UUID
 
 from src.domain.article import Article
 
 
 class BaseArticleRepository(Protocol):
-    async def save_article(self, article: Article) -> Article:
+    async def add_article(self, article: Article) -> Article:
         raise NotImplementedError
 
-    async def save_many_articles(self, articles: Iterable[Article]) -> list[Article]:
+    async def add_articles(self, articles: Iterable[Article]) -> list[Article]:
         raise NotImplementedError
 
-    async def get_article(self, id: int) -> Article | None:
+    async def get_article(self, id: UUID) -> Article | None:
         raise NotImplementedError
 
-    async def get_article_with_siblings(self, id: int) -> Article | None:
+    async def get_article_with_siblings(self, id: UUID) -> Article | None:
+        raise NotImplementedError
+
+    async def get_articles_by_url(self, urls: Iterable[str]) -> list[Article]:
+        raise NotImplementedError
+
+    async def add_article_pairs(self, pairs: Iterable[tuple[UUID, UUID]]) -> None:
         raise NotImplementedError

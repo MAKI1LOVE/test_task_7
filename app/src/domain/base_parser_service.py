@@ -6,5 +6,5 @@ from src.domain.article import Article
 
 class BaseParserService(Protocol):
     @abstractmethod
-    async def parse(self, url: str) -> Article:
+    async def parse(self, url: str) -> Article | None:
         raise NotImplementedError
